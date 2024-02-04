@@ -17,4 +17,18 @@ $packageArgs = @{
   validExitCodes= @(0, 3010, 1641)
 }
 
-Install-ChocolateyPackage @packageArgs
+$OSVersion = [System.Environment]::OSVersion.Version
+$RequiredMajorVersion = 10
+$RequiredMinorVersion = 0
+$RequiredBuildVersion = 14393
+
+if ( $OSVersion.Major -lt $RequiredMajorVersion -or
+	($OSVersion.Major -eq $RequiredMajorVersion -and $OSVersion.Minor -lt $RequiredMinorVersion) -or
+	($OSVersion.Major -eq $RequiredMajorVersion -and $OSVersion.Minor -eq $RequiredMinorVersion -and $OSVersion.Build -lt $RequiredBuildVersion) )
+	{
+		Write-Error "This package requires Windows version $RequiredMajorVersion.$RequiredMinorVersion.$RequiredBuildVersion or higher."
+		throw "Unsupported operating system version."
+}
+else {
+	Install-ChocolateyPackage @packageArgs
+}
