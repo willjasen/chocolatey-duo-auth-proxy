@@ -1,0 +1,2 @@
+# exclude NuGet package files
+*.nupkg
