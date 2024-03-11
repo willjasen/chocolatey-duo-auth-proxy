@@ -1,7 +1,7 @@
 $ErrorActionPreference = 'Stop'
 $packageArgs = @{
   packageName   = $env:ChocolateyPackageName
-  softwareName  = 'DuoAuthProxy'
+  softwareName  = 'Duo Security Authentication Proxy*'
   fileType      = 'exe'
   silentArgs    = '/S'
   file			= (Get-ItemProperty "HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\DuoAuthProxy").UninstallString
