@@ -12,7 +12,11 @@
     <docsUrl>https://duo.com/docs/authproxy-reference</docsUrl>
     <tags>duo authentication mfa security</tags>
     <summary>Duo Authentication Proxy</summary>
-    <description>The Duo Authentication Proxy is an on-premises software service that receives authentication requests from your local devices and applications via RADIUS or LDAP, optionally performs primary authentication against your existing LDAP directory or RADIUS authentication server, and then contacts Duo to perform secondary authentication.</description>
+    <description>
+		The Duo Authentication Proxy is an on-premises software service that receives authentication requests from your local devices and applications via RADIUS or LDAP, optionally performs primary authentication against your existing LDAP directory or RADIUS authentication server, and then contacts Duo to perform secondary authentication.
+		
+		If you are looking for the Duo application package deployed to Windows endpoints, you can find it [here](https://community.chocolatey.org/packages/duo-authentication).
+	</description>
     <releaseNotes>https://duo.com/docs/authproxy-notes</releaseNotes>
     <dependencies></dependencies>
   </metadata>
