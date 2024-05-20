@@ -1,6 +1,6 @@
 $ErrorActionPreference = 'Stop'
 $toolsDir   = "$(Split-Path -parent $MyInvocation.MyCommand.Definition)"
-$url        = 'https://dl.duosecurity.com/duoauthproxy-6.2.0.exe'
+$url        = 'https://dl.duosecurity.com/duoauthproxy-6.3.0.exe'
 
 $packageArgs = @{
   packageName   = $env:ChocolateyPackageName
@@ -10,7 +10,7 @@ $packageArgs = @{
 
   softwareName  = 'Duo Security Authentication Proxy*'
 
-  checksum      = '3beb891cfb59601c6e5d83c2b14c6457e330770558a6c04b1a003a55dda104a1'
+  checksum      = '9d6554874ce1507cea4417fbda8e93a2bb1913e6bf5bfb39ee678b7441e8c892'
   checksumType  = 'sha256'
 
   silentArgs    = "/S"
