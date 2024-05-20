@@ -9,3 +9,7 @@
 ## Installation
 1. Install [Chocolatey](https://chocolatey.org/) if needed
 2. Run in Powershell - `choco install duo-auth-proxy`
+
+## References
+ - [Duo Authentication Proxy - Reference](https://duo.com/docs/authproxy-reference)
+ - [Duo Downloads and Checksums for Windows](https://duo.com/docs/checksums#windows)
