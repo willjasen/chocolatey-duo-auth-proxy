@@ -3,3 +3,6 @@
 
 # exclude Windows executables
 *.exe
+
+# exclude macOS files
+.DS_Store
