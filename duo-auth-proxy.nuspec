@@ -2,7 +2,7 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2015/06/nuspec.xsd">
   <metadata>
     <id>duo-auth-proxy</id>
-    <version>6.4.2</version>
+    <version>6.5.0</version>
     <packageSourceUrl>https://github.com/willjasen/chocolatey-duo-auth-proxy</packageSourceUrl>
     <owners>willjasen</owners>
     <title>Duo Authentication Proxy</title>
