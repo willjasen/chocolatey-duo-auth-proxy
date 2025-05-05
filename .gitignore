@@ -1,6 +1,3 @@
-# exclude NuGet package files
-*.nupkg
-
 # exclude Windows executables
 *.exe
 
