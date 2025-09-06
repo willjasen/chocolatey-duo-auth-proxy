@@ -2,7 +2,7 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2015/06/nuspec.xsd">
   <metadata>
     <id>duo-auth-proxy</id>
-    <version>6.5.1</version>
+    <version>6.5.2</version>
     <packageSourceUrl>https://github.com/willjasen/chocolatey-duo-auth-proxy</packageSourceUrl>
     <owners>willjasen</owners>
     <title>Duo Authentication Proxy</title>
@@ -15,7 +15,7 @@
     <description>
 		The Duo Authentication Proxy is an on-premises software service that receives authentication requests from your local devices and applications via RADIUS or LDAP, optionally performs primary authentication against your existing LDAP directory or RADIUS authentication server, and then contacts Duo to perform secondary authentication.
 		
-		If you are looking for the Duo application package deployed to Windows endpoints, you can find it [here](https://community.chocolatey.org/packages/duo-authentication).
+		This software is generally installed on platforms like Windows Server. If you are looking for the Duo application package deployed to Windows endpoints, you can find it [here](https://community.chocolatey.org/packages/duo-authentication).
 	</description>
     <releaseNotes>https://duo.com/docs/authproxy-notes</releaseNotes>
     <dependencies></dependencies>
