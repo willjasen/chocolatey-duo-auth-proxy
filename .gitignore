@@ -3,3 +3,4 @@
 
 # exclude macOS files
 .DS_Store
+.vscode/settings.json
