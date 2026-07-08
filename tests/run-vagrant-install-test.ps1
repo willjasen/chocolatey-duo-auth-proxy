@@ -9,7 +9,8 @@ if (-not (Get-Command vagrant -ErrorAction SilentlyContinue)) {
 Push-Location $repoRoot
 try {
 	Write-Host 'Starting the Windows Vagrant integration test. This may take a while the first time.'
-	& vagrant up --provision
+	$env:VAGRANT_LOG = 'info'
+	& vagrant up --provision --debug
 
 	if ($LASTEXITCODE -ne 0) {
 		throw "Vagrant integration test failed with exit code $LASTEXITCODE."

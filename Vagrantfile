@@ -2,6 +2,7 @@ Vagrant.configure("2") do |config|
   config.vm.box = ENV.fetch("VAGRANT_WINDOWS_BOX", "gusztavvargadr/windows-server-2022-standard")
   config.vm.guest = :windows
   config.vm.communicator = "winrm"
+  config.vm.boot_timeout = Integer(ENV.fetch("VAGRANT_BOOT_TIMEOUT", "1800"))
 
   config.winrm.username = ENV.fetch("VAGRANT_WINDOWS_USERNAME", "vagrant")
   config.winrm.password = ENV.fetch("VAGRANT_WINDOWS_PASSWORD", "vagrant")
