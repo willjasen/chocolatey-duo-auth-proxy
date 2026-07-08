@@ -120,27 +120,19 @@ if (-not [string]::IsNullOrWhiteSpace($pushApiKey)) {
 		$shouldPush = $promptValue -match '^(1|true|yes|y)$'
 	}
 	else {
-		try {
-			$response = Read-Host 'A Chocolatey push API key was found. Push the package to the Chocolatey feed? [y/N]'
-			$shouldPush = $response -match '^(y|yes)$'
-		}
-		catch {
-			Write-Host 'No interactive response was provided. Skipping package push.'
-			$shouldPush = $false
-		}
+		$shouldPush = $false
+		Write-Host 'A Chocolatey push API key was found but no confirmation was provided. Skipping package push.'
 	}
 }
 else {
-	try {
-		$manualApiKey = Read-Host 'No Chocolatey push API key was provided. Enter the API key to push the package, or press Enter to skip.'
-		if (-not [string]::IsNullOrWhiteSpace($manualApiKey)) {
-			$pushApiKey = $manualApiKey
-			$shouldPush = $true
-		}
+	$manualApiKey = $env:DUO_PUSH_API_KEY
+	if (-not [string]::IsNullOrWhiteSpace($manualApiKey)) {
+		$pushApiKey = $manualApiKey
+		$shouldPush = $true
 	}
-	catch {
-		Write-Host 'No interactive response was provided. Skipping package push.'
+	else {
 		$shouldPush = $false
+		Write-Host 'No Chocolatey push API key was provided. Skipping package push.'
 	}
 }
 
