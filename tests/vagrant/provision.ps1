@@ -115,19 +115,31 @@ $pushSource = $env:DUO_PUSH_SOURCE
 $shouldPush = $false
 
 if (-not [string]::IsNullOrWhiteSpace($pushApiKey)) {
-	$shouldPush = $true
-}
-
-if ($shouldPush) {
 	$promptValue = $env:DUO_PUSH_CONFIRM
-	if ([string]::IsNullOrWhiteSpace($promptValue)) {
-		Write-Host 'A Chocolatey push API key was found. Do you want to push the package to the Chocolatey feed?'
-		Write-Host 'Set DUO_PUSH_CONFIRM=true to enable pushing automatically, or leave it unset to skip.'
-	}
-	elseif ($promptValue -match '^(1|true|yes|y)$') {
-		$shouldPush = $true
+	if (-not [string]::IsNullOrWhiteSpace($promptValue)) {
+		$shouldPush = $promptValue -match '^(1|true|yes|y)$'
 	}
 	else {
+		try {
+			$response = Read-Host 'A Chocolatey push API key was found. Push the package to the Chocolatey feed? [y/N]'
+			$shouldPush = $response -match '^(y|yes)$'
+		}
+		catch {
+			Write-Host 'No interactive response was provided. Skipping package push.'
+			$shouldPush = $false
+		}
+	}
+}
+else {
+	try {
+		$manualApiKey = Read-Host 'No Chocolatey push API key was provided. Enter the API key to push the package, or press Enter to skip.'
+		if (-not [string]::IsNullOrWhiteSpace($manualApiKey)) {
+			$pushApiKey = $manualApiKey
+			$shouldPush = $true
+		}
+	}
+	catch {
+		Write-Host 'No interactive response was provided. Skipping package push.'
 		$shouldPush = $false
 	}
 }
