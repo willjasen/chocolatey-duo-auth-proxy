@@ -110,6 +110,48 @@ Invoke-NativeCommand -FilePath $chocolateyPath -ArgumentList @(
 
 Assert-DuoAuthProxyInstalled
 
+$pushApiKey = $env:DUO_PUSH_API_KEY
+$pushSource = $env:DUO_PUSH_SOURCE
+$shouldPush = $false
+
+if (-not [string]::IsNullOrWhiteSpace($pushApiKey)) {
+	$shouldPush = $true
+}
+
+if ($shouldPush) {
+	$promptValue = $env:DUO_PUSH_CONFIRM
+	if ([string]::IsNullOrWhiteSpace($promptValue)) {
+		Write-Host 'A Chocolatey push API key was found. Do you want to push the package to the Chocolatey feed?'
+		Write-Host 'Set DUO_PUSH_CONFIRM=true to enable pushing automatically, or leave it unset to skip.'
+	}
+	elseif ($promptValue -match '^(1|true|yes|y)$') {
+		$shouldPush = $true
+	}
+	else {
+		$shouldPush = $false
+	}
+}
+
+if ($shouldPush) {
+	if ([string]::IsNullOrWhiteSpace($pushSource)) {
+		$pushSource = 'https://push.chocolatey.org/'
+	}
+
+	$packagePath = Join-Path $packageOutput "duo-auth-proxy.$version.nupkg"
+	if (-not (Test-Path $packagePath)) {
+		throw "Expected package was not created at $packagePath."
+	}
+
+	Write-Host "Configuring Chocolatey API key for $pushSource."
+	Invoke-NativeCommand -FilePath $chocolateyPath -ArgumentList @('apikey', '--key', $pushApiKey, '--source', $pushSource)
+
+	Write-Host "Pushing $packagePath to $pushSource."
+	Invoke-NativeCommand -FilePath $chocolateyPath -ArgumentList @('push', $packagePath, '--source', $pushSource)
+}
+else {
+	Write-Host 'Package push skipped. Set DUO_PUSH_CONFIRM=true to publish the package.'
+}
+
 if ($env:DUO_TEST_UNINSTALL -eq 'true') {
 	Write-Host "Uninstalling duo-auth-proxy $version."
 	Invoke-NativeCommand -FilePath $chocolateyPath -ArgumentList @(

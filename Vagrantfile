@@ -14,10 +14,20 @@ Vagrant.configure("2") do |config|
     vb.cpus = ENV.fetch("VAGRANT_CPUS", "2")
   end
 
+  push_api_key = ENV["DUO_PUSH_API_KEY"]
+  if push_api_key.nil? || push_api_key.empty?
+    key_file = File.expand_path("~/.chocolatey/duo-auth-proxy-api-key")
+    if File.exist?(key_file)
+      push_api_key = File.read(key_file).strip
+    end
+  end
+
   config.vm.provision "shell",
     privileged: true,
     path: "tests/vagrant/provision.ps1",
     env: {
-      "DUO_TEST_UNINSTALL" => ENV.fetch("DUO_TEST_UNINSTALL", "false")
+      "DUO_TEST_UNINSTALL" => ENV.fetch("DUO_TEST_UNINSTALL", "false"),
+      "DUO_PUSH_API_KEY" => push_api_key.to_s,
+      "DUO_PUSH_SOURCE" => ENV.fetch("DUO_PUSH_SOURCE", "https://push.chocolatey.org/")
     }
 end
