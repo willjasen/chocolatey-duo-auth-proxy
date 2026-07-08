@@ -154,11 +154,26 @@ if ($shouldPush) {
 		throw "Expected package was not created at $packagePath."
 	}
 
-	Write-Host "Configuring Chocolatey API key for $pushSource."
-	Invoke-NativeCommand -FilePath $chocolateyPath -ArgumentList @('apikey', '--key', $pushApiKey, '--source', $pushSource)
+	$communityFeedUrl = 'https://community.chocolatey.org/api/v2/package/duo-auth-proxy/'
+	$versionExists = $false
+	try {
+		$packageResponse = Invoke-WebRequest -Uri "$communityFeedUrl$version" -Method Head -UseBasicParsing -ErrorAction SilentlyContinue
+		$versionExists = $packageResponse.StatusCode -eq 200
+	}
+	catch {
+		$versionExists = $false
+	}
 
-	Write-Host "Pushing $packagePath to $pushSource."
-	Invoke-NativeCommand -FilePath $chocolateyPath -ArgumentList @('push', $packagePath, '--source', $pushSource)
+	if ($versionExists) {
+		Write-Host "Package version $version already exists on the Chocolatey Community feed. Skipping push."
+	}
+	else {
+		Write-Host "Configuring Chocolatey API key for $pushSource."
+		Invoke-NativeCommand -FilePath $chocolateyPath -ArgumentList @('apikey', '--key', $pushApiKey, '--source', $pushSource)
+
+		Write-Host "Pushing $packagePath to $pushSource."
+		Invoke-NativeCommand -FilePath $chocolateyPath -ArgumentList @('push', $packagePath, '--source', $pushSource)
+	}
 }
 else {
 	Write-Host 'Package push skipped. Set DUO_PUSH_CONFIRM=true to publish the package.'
