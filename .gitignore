@@ -4,3 +4,7 @@
 # exclude macOS files
 .DS_Store
 .vscode/settings.json
+
+# exclude local Vagrant state and integration packages
+.vagrant/
+packages/vagrant/

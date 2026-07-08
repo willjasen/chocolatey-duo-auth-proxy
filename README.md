@@ -14,6 +14,37 @@ This software is generally installed on platforms like Windows Server. If you ar
 1. Install [Chocolatey](https://chocolatey.org/) if needed
 2. Run in Powershell - `choco install duo-auth-proxy`
 
+## Testing
+Run the package checks with PowerShell:
+
+```powershell
+./tests/run-tests.ps1
+```
+
+The tests validate the nuspec metadata, confirm the installer URL/checksum and packaged `.nupkg` match the current version, and mock the Chocolatey install/uninstall helpers so the package scripts can be checked without installing Duo or starting a VM.
+
+### Vagrant integration test
+To test the real Chocolatey install inside a Windows VM, install Vagrant and VirtualBox, then run:
+
+```powershell
+./tests/run-vagrant-install-test.ps1
+```
+
+This builds the package from the current working tree inside the VM, installs it with Chocolatey from that local package source, and verifies the Duo Authentication Proxy registry entry and Windows service exist.
+
+The default box is `gusztavvargadr/windows-server-2022-standard`. To use a different Windows box:
+
+```powershell
+$env:VAGRANT_WINDOWS_BOX = 'your/windows-box'
+./tests/run-vagrant-install-test.ps1
+```
+
+The VM is left running for inspection. Clean it up with:
+
+```powershell
+vagrant destroy -f
+```
+
 ## References
  - [Duo Authentication Proxy - Reference](https://duo.com/docs/authproxy-reference)
  - [Duo Downloads and Checksums for Windows](https://duo.com/docs/checksums#windows)

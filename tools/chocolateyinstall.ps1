@@ -22,12 +22,23 @@ $RequiredMajorVersion = 10
 $RequiredMinorVersion = 0
 $RequiredBuildVersion = 14393
 
-if ( $OSVersion.Major -lt $RequiredMajorVersion -or
-	($OSVersion.Major -eq $RequiredMajorVersion -and $OSVersion.Minor -lt $RequiredMinorVersion) -or
-	($OSVersion.Major -eq $RequiredMajorVersion -and $OSVersion.Minor -eq $RequiredMinorVersion -and $OSVersion.Build -lt $RequiredBuildVersion) )
+function Test-DuoAuthProxySupportedOS {
+	param(
+		[Parameter(Mandatory = $true)]
+		[version] $Version
+	)
+
+	return -not (
+		$Version.Major -lt $RequiredMajorVersion -or
+		($Version.Major -eq $RequiredMajorVersion -and $Version.Minor -lt $RequiredMinorVersion) -or
+		($Version.Major -eq $RequiredMajorVersion -and $Version.Minor -eq $RequiredMinorVersion -and $Version.Build -lt $RequiredBuildVersion)
+	)
+}
+
+if ( -not (Test-DuoAuthProxySupportedOS -Version $OSVersion) )
 	{
-		Write-Error "This package requires Windows version $RequiredMajorVersion.$RequiredMinorVersion.$RequiredBuildVersion or higher."
-		throw "Unsupported operating system version."
+	Write-Error "This package requires Windows version $RequiredMajorVersion.$RequiredMinorVersion.$RequiredBuildVersion or higher."
+	throw "Unsupported operating system version."
 }
 else {
 	Install-ChocolateyPackage @packageArgs
