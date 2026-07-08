@@ -11,7 +11,7 @@ Vagrant.configure("2") do |config|
   config.vm.provider "virtualbox" do |vb|
     vb.name = "chocolatey-duo-auth-proxy-test"
     vb.memory = ENV.fetch("VAGRANT_MEMORY", "16384")
-    vb.cpus = ENV.fetch("VAGRANT_CPUS", "2")
+    vb.cpus = ENV.fetch("VAGRANT_CPUS", "4")
   end
 
   push_api_key = ENV["DUO_PUSH_API_KEY"]
