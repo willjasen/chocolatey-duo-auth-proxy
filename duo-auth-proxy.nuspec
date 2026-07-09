@@ -10,6 +10,8 @@
     <projectUrl>https://duo.com</projectUrl>
     <iconUrl>https://rawcdn.githack.com/dave-pollock/chocolatey-packages/22346845c9de735f305b768a0e9481e19687226a/duo-authentication/icon.png</iconUrl>
     <docsUrl>https://duo.com/docs/authproxy-reference</docsUrl>
+	<licenseUrl>https://duo.com/legal/terms</licenseUrl>
+	<requireLicenseAcceptance>false</requireLicenseAcceptance>
     <tags>duo authentication mfa security</tags>
     <summary>Duo Authentication Proxy</summary>
     <description>
