@@ -75,6 +75,33 @@ function Get-Nuspec {
 	[xml] (Get-Content -Raw -Path (Join-Path $repoRoot 'duo-auth-proxy.nuspec'))
 }
 
+Invoke-Test 'Duo update checker parses the current Windows release and checksum' {
+	. (Join-Path $repoRoot 'scripts/Check-DuoAuthProxyUpdate.ps1') -WebhookUrl 'https://example.test/webhook'
+
+	$release = Get-LatestDuoAuthProxyRelease -ChecksumsContent @'
+## Duo Authentication Proxy
+### Windows
+#### Current Release
+<a href="https://dl.duosecurity.com/duoauthproxy-6.8.1.exe">bbb051a35be93ea3ce600d406c3cdd28f520a7aef224186c96479a4572d59b6e  duoauthproxy-6.8.1.exe
+'@
+
+	Assert-Equal $release.Version.ToString() '6.8.1' 'Update checker version mismatch.'
+	Assert-Equal $release.Checksum 'bbb051a35be93ea3ce600d406c3cdd28f520a7aef224186c96479a4572d59b6e' 'Update checker checksum mismatch.'
+	Assert-Equal $release.Url 'https://dl.duosecurity.com/duoauthproxy-6.8.1.exe' 'Update checker installer URL mismatch.'
+}
+
+Invoke-Test 'Duo update checker rejects a missing current Windows release' {
+	. (Join-Path $repoRoot 'scripts/Check-DuoAuthProxyUpdate.ps1') -WebhookUrl 'https://example.test/webhook'
+
+	try {
+		Get-LatestDuoAuthProxyRelease -ChecksumsContent '## Duo Authentication Proxy'
+		throw 'The update checker unexpectedly accepted missing release data.'
+	}
+	catch {
+		Assert-Match $_.Exception.Message 'current Duo Authentication Proxy Windows release was not found' 'Unexpected missing release error.'
+	}
+}
+
 Invoke-Test 'nuspec has required package metadata' {
 	$nuspec = Get-Nuspec
 	$namespace = New-Object System.Xml.XmlNamespaceManager($nuspec.NameTable)
