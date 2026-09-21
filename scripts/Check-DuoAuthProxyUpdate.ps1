@@ -54,6 +54,40 @@ function Get-LatestDuoAuthProxyRelease {
 	}
 }
 
+function Write-UpdateCheckSummary {
+	param(
+		[Parameter(Mandatory = $true)]
+		[version] $CurrentVersion,
+
+		[Parameter(Mandatory = $true)]
+		[pscustomobject] $LatestRelease,
+
+		[Parameter(Mandatory = $true)]
+		[bool] $UpdateAvailable,
+
+		[Parameter()]
+		[bool] $WebhookSent
+	)
+
+	if (-not $env:GITHUB_STEP_SUMMARY) {
+		return
+	}
+
+	$lines = [System.Collections.Generic.List[string]]::new()
+	$lines.Add('## Duo Authentication Proxy update check')
+	$lines.Add('')
+	$lines.Add('| | |')
+	$lines.Add('| --- | --- |')
+	$lines.Add("| Package version | $CurrentVersion |")
+	$lines.Add("| Latest Duo release | $($LatestRelease.Version) |")
+	$lines.Add("| Update available | $(if ($UpdateAvailable) { '✅ Yes' } else { '⬜ No' }) |")
+	$lines.Add("| Installer URL | $($LatestRelease.Url) |")
+	$lines.Add("| SHA-256 | ``$($LatestRelease.Checksum)`` |")
+	$lines.Add("| Webhook sent | $(if ($WebhookSent) { '✅ Yes' } else { '⬜ No' }) |")
+
+	Add-Content -Path $env:GITHUB_STEP_SUMMARY -Value ($lines -join [System.Environment]::NewLine)
+}
+
 function Invoke-DuoAuthProxyUpdateCheck {
 	param(
 		[Parameter()]
@@ -64,6 +98,7 @@ function Invoke-DuoAuthProxyUpdateCheck {
 	$checksumsResponse = Invoke-WebRequest -Uri $checksumsUrl -UseBasicParsing
 	$latestRelease = Get-LatestDuoAuthProxyRelease -ChecksumsContent $checksumsResponse.Content
 	$updateAvailable = $latestRelease.Version -gt $currentVersion
+	$webhookSent = $false
 
 	if ($updateAvailable) {
 		Write-Host "Duo Authentication Proxy $($latestRelease.Version) is available; package version is $currentVersion."
@@ -101,13 +136,19 @@ function Invoke-DuoAuthProxyUpdateCheck {
 		workflow_run_url = $workflowRunUrl
 	}
 
-	if ([string]::IsNullOrWhiteSpace($WebhookUrl)) {
-		Write-Warning 'DUO_UPDATE_WEBHOOK_URL is not configured; no webhook was sent.'
-		return
-	}
+	try {
+		if ([string]::IsNullOrWhiteSpace($WebhookUrl)) {
+			Write-Warning 'DUO_UPDATE_WEBHOOK_URL is not configured; no webhook was sent.'
+			return
+		}
 
-	Invoke-RestMethod -Uri $WebhookUrl -Method Post -ContentType 'application/json' -Body ($payload | ConvertTo-Json -Depth 3)
-	Write-Host 'Update webhook sent.'
+		Invoke-RestMethod -Uri $WebhookUrl -Method Post -ContentType 'application/json' -Body ($payload | ConvertTo-Json -Depth 3)
+		Write-Host 'Update webhook sent.'
+		$webhookSent = $true
+	}
+	finally {
+		Write-UpdateCheckSummary -CurrentVersion $currentVersion -LatestRelease $latestRelease -UpdateAvailable $updateAvailable -WebhookSent $webhookSent
+	}
 }
 
 if ($MyInvocation.InvocationName -ne '.') {
