@@ -23,6 +23,12 @@ Run the package checks with PowerShell:
 
 The tests validate the nuspec metadata, confirm the installer URL/checksum and packaged `.nupkg` match the current version, and mock the Chocolatey install/uninstall helpers so the package scripts can be checked without installing Duo or starting a VM.
 
+## Duo release notifications
+
+The `Check Duo Authentication Proxy update` GitHub Actions workflow runs daily and can also be started manually. It reads Duo's published Windows checksum page and compares the newest release to the nuspec version. When a newer release is available, it sends a JSON `POST` notification containing the current and latest versions, installer URL, and SHA-256 checksum.
+
+To enable notifications, add a repository Actions secret named `DUO_UPDATE_WEBHOOK_URL`. The workflow reports the available release but does not alter or publish the Chocolatey package, so the checksum and installer update can be reviewed before release. If the secret is absent, the workflow completes successfully without making an outbound webhook request.
+
 ### Vagrant integration test
 To test the real Chocolatey install inside a Windows VM, install Vagrant and VirtualBox, then run:
 
