@@ -63,14 +63,18 @@ function Invoke-DuoAuthProxyUpdateCheck {
 	$currentVersion = Get-PackageVersion -Path $nuspecPath
 	$checksumsResponse = Invoke-WebRequest -Uri $checksumsUrl -UseBasicParsing
 	$latestRelease = Get-LatestDuoAuthProxyRelease -ChecksumsContent $checksumsResponse.Content
+	$updateAvailable = $latestRelease.Version -gt $currentVersion
 
-	if ($latestRelease.Version -le $currentVersion) {
+	if ($updateAvailable) {
+		Write-Host "Duo Authentication Proxy $($latestRelease.Version) is available; package version is $currentVersion."
+	}
+	else {
 		Write-Host "Duo Authentication Proxy is current at version $currentVersion."
-		return
 	}
 
 	$payload = @{
-		event            = 'duo_auth_proxy_update_available'
+		event            = if ($updateAvailable) { 'duo_auth_proxy_update_available' } else { 'duo_auth_proxy_up_to_date' }
+		update_available = $updateAvailable
 		current_version  = $currentVersion.ToString()
 		latest_version   = $latestRelease.Version.ToString()
 		installer_url    = $latestRelease.Url
@@ -84,8 +88,6 @@ function Invoke-DuoAuthProxyUpdateCheck {
 			$null
 		}
 	}
-
-	Write-Host "Duo Authentication Proxy $($latestRelease.Version) is available; package version is $currentVersion."
 
 	if ([string]::IsNullOrWhiteSpace($WebhookUrl)) {
 		Write-Warning 'DUO_UPDATE_WEBHOOK_URL is not configured; no webhook was sent.'
