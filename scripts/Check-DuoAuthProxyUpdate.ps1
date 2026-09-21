@@ -72,7 +72,24 @@ function Invoke-DuoAuthProxyUpdateCheck {
 		Write-Host "Duo Authentication Proxy is current at version $currentVersion."
 	}
 
+	$workflowRunUrl = if ($env:GITHUB_SERVER_URL -and $env:GITHUB_REPOSITORY -and $env:GITHUB_RUN_ID) {
+		"$env:GITHUB_SERVER_URL/$env:GITHUB_REPOSITORY/actions/runs/$env:GITHUB_RUN_ID"
+	}
+	else {
+		$null
+	}
+
+	$content = if ($updateAvailable) {
+		"Duo Authentication Proxy $($latestRelease.Version) is available (package is at $currentVersion)."
+	}
+	else {
+		"Duo Authentication Proxy is current at version $currentVersion."
+	}
+
+	# Discord webhooks reject a payload without a non-empty "content" or "embeds" field
+	# (error code 50006, "Cannot send an empty message"), so the message text is required here.
 	$payload = @{
+		content          = $content
 		event            = if ($updateAvailable) { 'duo_auth_proxy_update_available' } else { 'duo_auth_proxy_up_to_date' }
 		update_available = $updateAvailable
 		current_version  = $currentVersion.ToString()
@@ -81,12 +98,7 @@ function Invoke-DuoAuthProxyUpdateCheck {
 		sha256           = $latestRelease.Checksum
 		checksums_url    = $checksumsUrl
 		repository       = $env:GITHUB_REPOSITORY
-		workflow_run_url = if ($env:GITHUB_SERVER_URL -and $env:GITHUB_REPOSITORY -and $env:GITHUB_RUN_ID) {
-			"$env:GITHUB_SERVER_URL/$env:GITHUB_REPOSITORY/actions/runs/$env:GITHUB_RUN_ID"
-		}
-		else {
-			$null
-		}
+		workflow_run_url = $workflowRunUrl
 	}
 
 	if ([string]::IsNullOrWhiteSpace($WebhookUrl)) {
