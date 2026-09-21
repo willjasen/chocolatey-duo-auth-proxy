@@ -1,7 +1,7 @@
 $ErrorActionPreference = 'Stop'
 $toolsDir   = "$(Split-Path -parent $MyInvocation.MyCommand.Definition)"
 $version	= '6.8.0'
-$url		= "https://dl.duosecurity.com/duoauthproxy-$version.exe"
+$url		= "https://dl.duosecurity.com/duoauthproxy-6.8.0.exe"
 
 $packageArgs = @{
   packageName   = $env:ChocolateyPackageName
