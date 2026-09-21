@@ -80,10 +80,10 @@ function Write-UpdateCheckSummary {
 	$lines.Add('| --- | --- |')
 	$lines.Add("| Package version | $CurrentVersion |")
 	$lines.Add("| Latest Duo release | $($LatestRelease.Version) |")
-	$lines.Add("| Update available | $(if ($UpdateAvailable) { '✅ Yes' } else { '⬜ No' }) |")
+	$lines.Add("| Update available | $(if ($UpdateAvailable) { '✅ Yes' } else { '❌ No' }) |")
 	$lines.Add("| Installer URL | $($LatestRelease.Url) |")
 	$lines.Add("| SHA-256 | ``$($LatestRelease.Checksum)`` |")
-	$lines.Add("| Webhook sent | $(if ($WebhookSent) { '✅ Yes' } else { '⬜ No' }) |")
+	$lines.Add("| Webhook sent | $(if ($WebhookSent) { '✅ Yes' } else { '❌ No' }) |")
 
 	Add-Content -Path $env:GITHUB_STEP_SUMMARY -Value ($lines -join [System.Environment]::NewLine)
 }
