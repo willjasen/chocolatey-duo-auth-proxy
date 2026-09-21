@@ -2,6 +2,7 @@ $ErrorActionPreference = 'Stop'
 
 $repoRoot = Split-Path -Parent $PSScriptRoot
 $failures = [System.Collections.Generic.List[string]]::new()
+$results = [System.Collections.Generic.List[pscustomobject]]::new()
 
 function Invoke-Test {
 	param(
@@ -15,12 +16,36 @@ function Invoke-Test {
 	try {
 		& $Test
 		Write-Host "[PASS] $Name"
+		$results.Add([pscustomobject] @{ Name = $Name; Passed = $true; Message = '' })
 	}
 	catch {
 		$failures.Add("$Name - $($_.Exception.Message)")
 		Write-Host "[FAIL] $Name"
 		Write-Host "       $($_.Exception.Message)"
+		$results.Add([pscustomobject] @{ Name = $Name; Passed = $false; Message = $_.Exception.Message })
 	}
+}
+
+function Write-TestSummary {
+	if (-not $env:GITHUB_STEP_SUMMARY) {
+		return
+	}
+
+	$lines = [System.Collections.Generic.List[string]]::new()
+	$lines.Add('## Test results')
+	$lines.Add('')
+	$lines.Add("$($results.Count - $failures.Count) of $($results.Count) tests passed.")
+	$lines.Add('')
+	$lines.Add('| Status | Test | Details |')
+	$lines.Add('| --- | --- | --- |')
+
+	foreach ($result in $results) {
+		$status = if ($result.Passed) { '✅' } else { '❌' }
+		$details = if ($result.Passed) { '' } else { ($result.Message -replace '\|', '\|') -replace "`r?`n", '<br/>' }
+		$lines.Add("| $status | $($result.Name) | $details |")
+	}
+
+	Add-Content -Path $env:GITHUB_STEP_SUMMARY -Value ($lines -join [System.Environment]::NewLine)
 }
 
 function Assert-True {
@@ -234,6 +259,8 @@ Invoke-Test 'uninstall script uses registry uninstall string and Chocolatey unin
 	Assert-Equal $script:uninstallCall.silentArgs '/S' 'Uninstall silent args mismatch.'
 	Assert-Equal $script:uninstallCall.file 'C:\Program Files\Duo Security Authentication Proxy\uninstall.exe' 'Uninstall file mismatch.'
 }
+
+Write-TestSummary
 
 if ($failures.Count -gt 0) {
 	Write-Host ''
