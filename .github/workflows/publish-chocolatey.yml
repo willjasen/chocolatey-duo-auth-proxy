@@ -1,0 +1,54 @@
+name: Publish Chocolatey package
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - duo-auth-proxy.nuspec
+      - tools/**
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    name: Pack and publish Duo Authentication Proxy package
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install Chocolatey
+        shell: pwsh
+        run: |
+          Set-ExecutionPolicy Bypass -Scope Process -Force
+          [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072
+          Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
+          $env:Path = "$env:ALLUSERSPROFILE\chocolatey\bin;$env:Path"
+          "$env:ALLUSERSPROFILE\chocolatey\bin" | Out-File -FilePath $env:GITHUB_PATH -Append
+
+      - name: Read package version
+        id: package
+        shell: pwsh
+        run: |
+          [xml]$nuspec = Get-Content -Raw -Path duo-auth-proxy.nuspec
+          $version = $nuspec.package.metadata.version
+          "version=$version" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+
+      - name: Pack Chocolatey package
+        shell: pwsh
+        run: choco pack duo-auth-proxy.nuspec --outputdirectory packages
+
+      - name: Publish package
+        shell: pwsh
+        env:
+          CHOCOLATEY_API_KEY: ${{ secrets.CHOCOLATEY_API_KEY }}
+        run: |
+          if ([string]::IsNullOrWhiteSpace($env:CHOCOLATEY_API_KEY)) {
+            throw 'The CHOCOLATEY_API_KEY repository secret is not configured.'
+          }
+          choco push "packages\duo-auth-proxy.${{ steps.package.outputs.version }}.nupkg" `
+            --source https://push.chocolatey.org/ `
+            --api-key $env:CHOCOLATEY_API_KEY `
+            --yes

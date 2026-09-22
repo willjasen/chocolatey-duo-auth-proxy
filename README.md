@@ -27,7 +27,9 @@ The tests validate the nuspec metadata, confirm the installer URL/checksum and p
 
 The `Check Duo Authentication Proxy update` GitHub Actions workflow runs daily and can also be started manually. It reads Duo's published Windows checksum page and compares the newest release to the nuspec version. When a newer release is available, it sends a JSON `POST` notification containing the current and latest versions, installer URL, and SHA-256 checksum.
 
-To enable notifications, add a repository Actions secret named `DUO_UPDATE_WEBHOOK_URL`. The workflow reports the available release but does not alter or publish the Chocolatey package, so the checksum and installer update can be reviewed before release. If the secret is absent, the workflow completes successfully without making an outbound webhook request.
+To enable notifications, add a repository Actions secret named `DUO_UPDATE_WEBHOOK_URL`. When a newer release is found, the workflow updates the nuspec and install script and opens or updates a pull request for review. If the secret is absent, the workflow completes successfully without making an outbound webhook request.
+
+After the update pull request is merged into `main`, the `Publish Chocolatey package` workflow packs and pushes the package to Chocolatey. Add the package repository API key as a repository Actions secret named `CHOCOLATEY_API_KEY`. The workflow fails clearly if that secret is missing.
 
 ### Vagrant integration test
 To test the real Chocolatey install inside a Windows VM, install Vagrant and VirtualBox, then run:

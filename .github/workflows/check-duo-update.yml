@@ -6,7 +6,8 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
+  pull-requests: write
 
 jobs:
   check:
@@ -18,4 +19,17 @@ jobs:
 
       - name: Check for a newer Duo Authentication Proxy release
         shell: pwsh
-        run: ./scripts/Check-DuoAuthProxyUpdate.ps1 -WebhookUrl $env:DUO_UPDATE_WEBHOOK_URL
+        run: ./scripts/Check-DuoAuthProxyUpdate.ps1 -WebhookUrl $env:DUO_UPDATE_WEBHOOK_URL -ApplyUpdate
+
+      - name: Create package update pull request
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: Update Duo Authentication Proxy package
+          title: Update Duo Authentication Proxy package
+          body: |
+            Updates the Chocolatey package to the latest Duo Authentication Proxy Windows release.
+
+            The installer URL and SHA-256 checksum were read from Duo's published checksums page.
+          branch: automation/duo-auth-proxy-update
+          delete-branch: true
