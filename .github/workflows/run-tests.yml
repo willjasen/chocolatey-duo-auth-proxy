@@ -29,9 +29,16 @@ jobs:
         shell: pwsh
         run: choco pack duo-auth-proxy.nuspec --outputdirectory packages
 
+      - name: Read package version
+        id: package
+        shell: pwsh
+        run: |
+          [xml]$nuspec = Get-Content -Raw -Path duo-auth-proxy.nuspec
+          "version=$($nuspec.package.metadata.version)" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+
       - name: Install package with Chocolatey
         shell: pwsh
-        run: choco install duo-auth-proxy --source "$env:GITHUB_WORKSPACE\packages" --version 6.8.0 --yes --no-progress
+        run: choco install duo-auth-proxy --source "$env:GITHUB_WORKSPACE\packages" --version "${{ steps.package.outputs.version }}" --yes --no-progress
 
       - name: Run tests
         shell: pwsh

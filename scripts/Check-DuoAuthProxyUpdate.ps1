@@ -1,7 +1,10 @@
 [CmdletBinding()]
 param(
 	[Parameter()]
-	[string] $WebhookUrl
+	[string] $WebhookUrl,
+
+	[Parameter()]
+	[switch] $ApplyUpdate
 )
 
 $ErrorActionPreference = 'Stop'
@@ -9,6 +12,7 @@ $ErrorActionPreference = 'Stop'
 $checksumsUrl = 'https://duo.com/docs/checksums'
 $repoRoot = Split-Path -Parent $PSScriptRoot
 $nuspecPath = Join-Path $repoRoot 'duo-auth-proxy.nuspec'
+$installScriptPath = Join-Path $repoRoot 'tools/chocolateyinstall.ps1'
 
 function Get-PackageVersion {
 	param(
@@ -88,6 +92,58 @@ function Write-UpdateCheckSummary {
 	Add-Content -Path $env:GITHUB_STEP_SUMMARY -Value ($lines -join [System.Environment]::NewLine)
 }
 
+function Update-PackageFiles {
+	param(
+		[Parameter(Mandatory = $true)]
+		[version] $Version,
+
+		[Parameter(Mandatory = $true)]
+		[string] $Checksum
+	)
+
+	$versionText = $Version.ToString()
+	$nuspecContent = [System.IO.File]::ReadAllText($nuspecPath)
+	$updatedNuspecContent = [regex]::Replace(
+		$nuspecContent,
+		'(?m)(<version>)[^<]+(</version>)',
+		"`$1$versionText`$2",
+		1
+	)
+
+	if ($updatedNuspecContent -eq $nuspecContent) {
+		throw "Package version was not updated in $nuspecPath."
+	}
+
+	$installContent = [System.IO.File]::ReadAllText($installScriptPath)
+	$updatedInstallContent = $installContent
+	$updatedInstallContent = [regex]::Replace(
+		$updatedInstallContent,
+		"(?m)(`$version\s*=\s*')[^']+(')",
+		"`$1$versionText`$2",
+		1
+	)
+	$updatedInstallContent = [regex]::Replace(
+		$updatedInstallContent,
+		'(?m)(duoauthproxy-)[0-9]+\.[0-9]+\.[0-9]+(\.exe)',
+		"`$1$versionText`$2",
+		1
+	)
+	$updatedInstallContent = [regex]::Replace(
+		$updatedInstallContent,
+		"(?m)(checksum\s*=\s*')[a-fA-F0-9]+(')",
+		"`$1$Checksum`$2",
+		1
+	)
+
+	if ($updatedInstallContent -eq $installContent) {
+		throw "Installer metadata was not updated in $installScriptPath."
+	}
+
+	[System.IO.File]::WriteAllText($nuspecPath, $updatedNuspecContent)
+	[System.IO.File]::WriteAllText($installScriptPath, $updatedInstallContent)
+	Write-Host "Updated package metadata to Duo Authentication Proxy $versionText."
+}
+
 function Invoke-DuoAuthProxyUpdateCheck {
 	param(
 		[Parameter()]
@@ -105,6 +161,10 @@ function Invoke-DuoAuthProxyUpdateCheck {
 	}
 	else {
 		Write-Host "Duo Authentication Proxy is current at version $currentVersion."
+	}
+
+	if ($ApplyUpdate -and $updateAvailable) {
+		Update-PackageFiles -Version $latestRelease.Version -Checksum $latestRelease.Checksum
 	}
 
 	$workflowRunUrl = if ($env:GITHUB_SERVER_URL -and $env:GITHUB_REPOSITORY -and $env:GITHUB_RUN_ID) {
