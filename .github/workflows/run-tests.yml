@@ -35,3 +35,12 @@ jobs:
       - name: Run tests
         shell: pwsh
         run: ./tests/run-tests.ps1
+
+      - name: Uninstall package with Chocolatey
+        shell: pwsh
+        run: |
+          choco uninstall duo-auth-proxy --yes --no-progress
+          $installed = choco list --local-only --exact --limit-output duo-auth-proxy
+          if ($installed) {
+            throw "duo-auth-proxy is still installed after Chocolatey uninstall."
+          }
