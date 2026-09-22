@@ -9,7 +9,8 @@ permissions:
   contents: read
 
 jobs:
-  test:
+  test-build-for-duo-auth-proxy-package:
+    name: Test build for Duo Auth Proxy package
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v5
