@@ -14,9 +14,23 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
+      - name: Install Chocolatey
+        shell: pwsh
+        run: |
+          Set-ExecutionPolicy Bypass -Scope Process -Force
+          [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072
+          Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
+          $env:Path = "$env:ALLUSERSPROFILE\chocolatey\bin;$env:Path"
+          "$env:ALLUSERSPROFILE\chocolatey\bin" | Out-File -FilePath $env:GITHUB_PATH -Append
+          choco --version
+
       - name: Pack Chocolatey package
         shell: pwsh
         run: choco pack duo-auth-proxy.nuspec --outputdirectory packages
+
+      - name: Install package with Chocolatey
+        shell: pwsh
+        run: choco install duo-auth-proxy --source "$env:GITHUB_WORKSPACE\packages" --version 6.8.0 --yes --no-progress
 
       - name: Run tests
         shell: pwsh
