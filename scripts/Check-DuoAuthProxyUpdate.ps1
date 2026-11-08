@@ -106,7 +106,7 @@ function Update-PackageFiles {
 	$updatedNuspecContent = [regex]::Replace(
 		$nuspecContent,
 		'(?m)(<version>)[^<]+(</version>)',
-		"`$1$versionText`$2",
+		"`${1}$versionText`${2}",
 		1
 	)
 
@@ -118,20 +118,20 @@ function Update-PackageFiles {
 	$updatedInstallContent = $installContent
 	$updatedInstallContent = [regex]::Replace(
 		$updatedInstallContent,
-		"(?m)(`$version\s*=\s*')[^']+(')",
-		"`$1$versionText`$2",
+		'(?m)(\$version\s*=\s*'')[^'']+('')',
+		"`${1}$versionText`${2}",
 		1
 	)
 	$updatedInstallContent = [regex]::Replace(
 		$updatedInstallContent,
 		'(?m)(duoauthproxy-)[0-9]+\.[0-9]+\.[0-9]+(\.exe)',
-		"`$1$versionText`$2",
+		"`${1}$versionText`${2}",
 		1
 	)
 	$updatedInstallContent = [regex]::Replace(
 		$updatedInstallContent,
 		"(?m)(checksum\s*=\s*')[a-fA-F0-9]+(')",
-		"`$1$Checksum`$2",
+		"`${1}$Checksum`${2}",
 		1
 	)
 

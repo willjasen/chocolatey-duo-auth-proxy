@@ -33,7 +33,9 @@ When a newer release is found, the workflow automatically updates the nuspec and
 
 After a successful submission, the workflow commits the updated metadata to `main` using `GITHUB_TOKEN`. Repository rules must permit this Actions bot push. If recording the version fails, the workflow reports an error; a retry skips a package already present on the Chocolatey feed and tries recording the version again. Publishing workflows share a concurrency group to prevent simultaneous submissions.
 
-The `Publish Chocolatey package` workflow remains available for manual publishing and package changes pushed to `main`. It also validates the package before submission and skips versions already on the feed. No update pull request is created by the scheduled checker anymore.
+Both publishing workflows create a GitHub release tagged `v<version>` with the built `.nupkg` attached after successful Chocolatey submission. The tag points to the commit containing that package version. If the release already exists, the package asset is uploaded again rather than creating a duplicate release.
+
+The `Publish Chocolatey package` workflow remains available for manual publishing and package changes pushed to `main`. It also validates the package before submission and skips versions already on the feed. It can be used to finish a GitHub release if a previous run submitted the package and recorded its version but failed at the release step. No update pull request is created by the scheduled checker anymore.
 
 ### Vagrant integration test
 To test the real Chocolatey install inside a Windows VM, install Vagrant and VirtualBox, then run:

@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: chocolatey-publish
@@ -53,3 +53,9 @@ jobs:
         env:
           CHOCOLATEY_API_KEY: ${{ secrets.CHOCOLATEY_API_KEY }}
         run: ./scripts/Publish-ChocolateyPackage.ps1 -Version '${{ steps.package.outputs.version }}'
+
+      - name: Create GitHub release with package
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: ./scripts/Publish-GitHubRelease.ps1 -Version '${{ steps.package.outputs.version }}'
