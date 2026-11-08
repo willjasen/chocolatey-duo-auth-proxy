@@ -55,3 +55,10 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Failed to commit the published package version.' }
           git push origin HEAD:main
           if ($LASTEXITCODE -ne 0) { throw 'Package submitted, but updating main failed. Check branch protection permissions before retrying.' }
+
+      - name: Create GitHub release with package
+        if: steps.update.outputs.update_available == 'true'
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: ./scripts/Publish-GitHubRelease.ps1 -Version '${{ steps.update.outputs.version }}'

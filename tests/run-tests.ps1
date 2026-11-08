@@ -127,6 +127,32 @@ Invoke-Test 'Duo update checker rejects a missing current Windows release' {
 	}
 }
 
+Invoke-Test 'Duo package update preserves XML and installer metadata' {
+	. (Join-Path $repoRoot 'scripts/Check-DuoAuthProxyUpdate.ps1')
+	$originalNuspecPath = $nuspecPath
+	$originalInstallScriptPath = $installScriptPath
+	$temporaryNuspec = New-TemporaryFile
+	$temporaryInstallScript = New-TemporaryFile
+	try {
+		Copy-Item -LiteralPath $nuspecPath -Destination $temporaryNuspec.FullName
+		Copy-Item -LiteralPath $installScriptPath -Destination $temporaryInstallScript.FullName
+		$nuspecPath = $temporaryNuspec.FullName
+		$installScriptPath = $temporaryInstallScript.FullName
+		$checksum = 'bbb051a35be93ea3ce600d406c3cdd28f520a7aef224186c96479a4572d59b6e'
+		Update-PackageFiles -Version ([version] '99.8.1') -Checksum $checksum
+		Assert-Equal (Get-PackageVersion -Path $nuspecPath).ToString() '99.8.1' 'Updated nuspec must remain valid XML with the new version.'
+		$install = Get-Content -Raw -LiteralPath $installScriptPath
+		Assert-Match $install '\$version\s*=\s*''99\.8\.1''' 'Installer version assignment was corrupted.'
+		Assert-Match $install 'duoauthproxy-99\.8\.1\.exe' 'Installer URL was corrupted.'
+		Assert-Match $install "checksum\s*=\s*'$checksum'" 'Installer checksum assignment was corrupted.'
+	}
+	finally {
+		$nuspecPath = $originalNuspecPath
+		$installScriptPath = $originalInstallScriptPath
+		Remove-Item -LiteralPath $temporaryNuspec.FullName, $temporaryInstallScript.FullName
+	}
+}
+
 foreach ($currentVersion in @('6.8.0', '6.8.1')) {
 	Invoke-Test "Duo update checker emits workflow outputs for $currentVersion" {
 		. (Join-Path $repoRoot 'scripts/Check-DuoAuthProxyUpdate.ps1')
@@ -214,6 +240,43 @@ Invoke-Test 'nuspec has required package metadata' {
 	Assert-Equal ($nuspec.SelectSingleNode('/nuspec:package/nuspec:metadata/nuspec:id', $namespace).InnerText) 'duo-auth-proxy' 'Package id mismatch.'
 	Assert-Match ($nuspec.SelectSingleNode('/nuspec:package/nuspec:metadata/nuspec:version', $namespace).InnerText) '^\d+\.\d+\.\d+$' 'Package version is not SemVer-like.'
 	Assert-True ([bool] $nuspec.SelectSingleNode('/nuspec:package/nuspec:files/nuspec:file[@src="tools\**" and @target="tools"]', $namespace)) 'Nuspec must include the tools folder.'
+}
+
+foreach ($existingRelease in @($false, $true)) {
+	Invoke-Test "GitHub release publisher handles existing release: $existingRelease" {
+		$version = (Get-Nuspec).package.metadata.version
+		$releaseCall = [pscustomobject] @{ Action = $null }
+		function git {
+			Assert-Equal ($args -join ' ') 'rev-parse HEAD' 'Expected release commit lookup.'
+			$global:LASTEXITCODE = 0
+			return '0123456789012345678901234567890123456789'
+		}
+		function gh {
+			$global:LASTEXITCODE = 0
+			if ($args[0] -eq 'api') {
+				if ($existingRelease) { return "v$version" }
+				return
+			}
+			$releaseCall.Action = $args[1]
+			Assert-Equal $args[0] 'release' 'Expected release command.'
+			Assert-Equal $args[2] "v$version" 'Unexpected release tag.'
+			Assert-Equal $args[3] (Join-Path $repoRoot "packages/duo-auth-proxy.$version.nupkg") 'Expected package asset.'
+			if (-not $existingRelease) {
+				Assert-True ($args -contains '0123456789012345678901234567890123456789') 'Release must target the package commit.'
+			}
+		}
+		$previousRepository = $env:GITHUB_REPOSITORY
+		$previousExitCode = $LASTEXITCODE
+		try {
+			$env:GITHUB_REPOSITORY = 'example/package'
+			& (Join-Path $repoRoot 'scripts/Publish-GitHubRelease.ps1') -Version $version
+			Assert-Equal $releaseCall.Action $(if ($existingRelease) { 'upload' } else { 'create' }) 'Unexpected release action.'
+		}
+		finally {
+			$env:GITHUB_REPOSITORY = $previousRepository
+			$global:LASTEXITCODE = $previousExitCode
+		}
+	}
 }
 
 Invoke-Test 'install script version, URL, checksum, and nupkg stay aligned' {
