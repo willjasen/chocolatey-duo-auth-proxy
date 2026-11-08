@@ -248,11 +248,11 @@ foreach ($existingRelease in @($false, $true)) {
 		$releaseCall = [pscustomobject] @{ Action = $null }
 		function git {
 			Assert-Equal ($args -join ' ') 'rev-parse HEAD' 'Expected release commit lookup.'
-			$global:LASTEXITCODE = 0
+			Set-Variable -Name LASTEXITCODE -Value 0 -Scope 1
 			return '0123456789012345678901234567890123456789'
 		}
 		function gh {
-			$global:LASTEXITCODE = 0
+			Set-Variable -Name LASTEXITCODE -Value 0 -Scope 1
 			if ($args[0] -eq 'api') {
 				if ($existingRelease) { return "v$version" }
 				return
