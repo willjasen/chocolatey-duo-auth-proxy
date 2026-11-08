@@ -12,6 +12,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: chocolatey-publish
+  cancel-in-progress: false
+
 jobs:
   publish:
     name: Pack and publish Duo Authentication Proxy package
@@ -40,15 +44,12 @@ jobs:
         shell: pwsh
         run: choco pack duo-auth-proxy.nuspec --outputdirectory packages
 
+      - name: Validate package
+        shell: pwsh
+        run: ./tests/run-tests.ps1
+
       - name: Publish package
         shell: pwsh
         env:
           CHOCOLATEY_API_KEY: ${{ secrets.CHOCOLATEY_API_KEY }}
-        run: |
-          if ([string]::IsNullOrWhiteSpace($env:CHOCOLATEY_API_KEY)) {
-            throw 'The CHOCOLATEY_API_KEY repository secret is not configured.'
-          }
-          choco push "packages\duo-auth-proxy.${{ steps.package.outputs.version }}.nupkg" `
-            --source https://push.chocolatey.org/ `
-            --api-key $env:CHOCOLATEY_API_KEY `
-            --yes
+        run: ./scripts/Publish-ChocolateyPackage.ps1 -Version '${{ steps.package.outputs.version }}'

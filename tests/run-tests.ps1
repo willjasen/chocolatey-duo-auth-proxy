@@ -127,6 +127,85 @@ Invoke-Test 'Duo update checker rejects a missing current Windows release' {
 	}
 }
 
+foreach ($currentVersion in @('6.8.0', '6.8.1')) {
+	Invoke-Test "Duo update checker emits workflow outputs for $currentVersion" {
+		. (Join-Path $repoRoot 'scripts/Check-DuoAuthProxyUpdate.ps1')
+		function Get-PackageVersion { return [version] $currentVersion }
+		function Invoke-WebRequest {
+			return [pscustomobject] @{
+				Content = '<a href="https://dl.duosecurity.com/duoauthproxy-6.8.1.exe">bbb051a35be93ea3ce600d406c3cdd28f520a7aef224186c96479a4572d59b6e  duoauthproxy-6.8.1.exe'
+			}
+		}
+
+		$outputFile = New-TemporaryFile
+		$previousOutput = $env:GITHUB_OUTPUT
+		try {
+			$env:GITHUB_OUTPUT = $outputFile.FullName
+			Invoke-DuoAuthProxyUpdateCheck
+			$output = Get-Content -Raw -Path $outputFile.FullName
+			$expectedUpdate = ($currentVersion -eq '6.8.0').ToString().ToLowerInvariant()
+			Assert-Match $output "update_available=$expectedUpdate" 'Update availability output mismatch.'
+			Assert-Match $output 'version=6\.8\.1' 'Release version output mismatch.'
+		}
+		finally {
+			$env:GITHUB_OUTPUT = $previousOutput
+			Remove-Item -LiteralPath $outputFile.FullName
+		}
+	}
+}
+
+foreach ($case in @(
+	@{ Name = 'pushes a new version'; Status = 404; ExitCode = 0; Key = 'test-key'; Pushes = 1; Error = $null },
+	@{ Name = 'skips an existing version'; Status = 200; ExitCode = 0; Key = 'test-key'; Pushes = 0; Error = $null },
+	@{ Name = 'rejects a missing API key'; Status = 404; ExitCode = 0; Key = ''; Pushes = 0; Error = 'secret is not configured' },
+	@{ Name = 'rejects a failed feed lookup'; Status = 503; ExitCode = 0; Key = 'test-key'; Pushes = 0; Error = 'HTTP 503' },
+	@{ Name = 'rejects an unauthorized feed lookup'; Status = 401; ExitCode = 0; Key = 'test-key'; Pushes = 0; Error = 'HTTP 401' },
+	@{ Name = 'reports a failed push'; Status = 404; ExitCode = 1; Key = 'test-key'; Pushes = 1; Error = 'exit code 1' }
+)) {
+	Invoke-Test "Chocolatey publisher $($case.Name)" {
+		. (Join-Path $repoRoot 'scripts/Publish-ChocolateyPackage.ps1') -Version '6.8.1'
+		$script:pushCalls = 0
+		function Invoke-WebRequest {
+			param($Uri, $Method, [switch] $SkipHttpErrorCheck)
+			Assert-Equal $Uri 'https://community.chocolatey.org/api/v2/package/duo-auth-proxy/6.8.1' 'Unexpected package lookup URL.'
+			Assert-Equal $Method 'Head' 'Unexpected package lookup method.'
+			return [pscustomobject] @{ StatusCode = $case.Status }
+		}
+		function choco {
+			$script:pushCalls++
+			Assert-Equal $args[0] 'push' 'Expected a package push.'
+			Assert-Equal $args[1] (Join-Path $repoRoot 'duo-auth-proxy.nuspec') 'Unexpected package path.'
+			Assert-Equal $args[3] 'https://push.chocolatey.org/' 'Unexpected push destination.'
+			Assert-Equal $args[5] 'test-key' 'Unexpected API key.'
+			$script:LASTEXITCODE = $case.ExitCode
+		}
+
+		$previousKey = $env:CHOCOLATEY_API_KEY
+		$previousExitCode = $LASTEXITCODE
+		try {
+			$env:CHOCOLATEY_API_KEY = $case.Key
+			$errorMessage = $null
+			try {
+				Publish-ChocolateyPackage -Version '6.8.1' -PackagePath (Join-Path $repoRoot 'duo-auth-proxy.nuspec')
+			}
+			catch {
+				$errorMessage = $_.Exception.Message
+			}
+			if ($case.Error) {
+				Assert-Match $errorMessage $case.Error 'Unexpected publication error.'
+			}
+			else {
+				Assert-Equal $errorMessage $null 'Unexpected publication failure.'
+			}
+			Assert-Equal $script:pushCalls $case.Pushes 'Unexpected number of package pushes.'
+		}
+		finally {
+			$env:CHOCOLATEY_API_KEY = $previousKey
+			$script:LASTEXITCODE = $previousExitCode
+		}
+	}
+}
+
 Invoke-Test 'nuspec has required package metadata' {
 	$nuspec = Get-Nuspec
 	$namespace = New-Object System.Xml.XmlNamespaceManager($nuspec.NameTable)

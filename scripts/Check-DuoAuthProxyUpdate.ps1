@@ -156,6 +156,11 @@ function Invoke-DuoAuthProxyUpdateCheck {
 	$updateAvailable = $latestRelease.Version -gt $currentVersion
 	$webhookSent = $false
 
+	if ($env:GITHUB_OUTPUT) {
+		Add-Content -Path $env:GITHUB_OUTPUT -Value "update_available=$($updateAvailable.ToString().ToLowerInvariant())"
+		Add-Content -Path $env:GITHUB_OUTPUT -Value "version=$($latestRelease.Version)"
+	}
+
 	if ($updateAvailable) {
 		Write-Host "Duo Authentication Proxy $($latestRelease.Version) is available; package version is $currentVersion."
 	}
